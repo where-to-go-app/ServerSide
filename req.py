@@ -36,7 +36,7 @@ req_create3 = {
     'latitude': 59.959126,
     'longitude':  30.301043,
     'creator_name': 'mister228',
-    'place_name': 'false1',
+    'place_name': 'true1',
     'country': 'Russia',
     'province': 'Saints Petersburg',
     'description': 'bla-bla',
@@ -45,7 +45,7 @@ req_create3 = {
 
 }
 req_delete = {
-    'place_name': 'POLYTECH'
+    'id': 58
 }
 
 req_find_near = {
@@ -55,15 +55,23 @@ req_find_near = {
     'limit': 3
 }
 
+req_find_interesting = {
+    'limit': 2
+}
+
+req_get_info = {
+    'id': 59
+}
+
 ans = requests.post("http://localhost:8080/api/places/create", json=req_create)
 print(ans.text)
 ans = requests.post("http://localhost:8080/api/places/create", json=req_create2)
 print(ans.text)
 ans = requests.post("http://localhost:8080/api/places/create", json=req_create3)
 print(ans.text)
-#
-#delete_place = requests.post("http://localhost:8080/api/places/delete", json=req_delete)
-#print(delete_place.text)
 
-ans1 = requests.post("http://localhost:8080/api/places/get_near", json=req_find_near)
+delete_place = requests.post("http://localhost:8080/api/places/delete", json=req_delete)
+print(delete_place.text)
+
+ans1 = requests.post("http://localhost:8080/api/places/get_info", json=req_get_info)
 print(ans1.text)

@@ -88,8 +88,11 @@ def create_places():
                       )
 
     db.session.add(place_row)
+    db.session.flush()
+    db.session.refresh(place_row)
+    place_id = place_row.id
     db.session.commit()
-    place_id = Place.query.filter_by(place_name=req["place_name"]).first().id
+
     print(place_id)
     for i in req["photos"]:
         photo_row = Photo(
@@ -111,7 +114,9 @@ def create_places():
 def delete_place():
     req = request.json
 
-    place = Place.query.filter_by(place_name=req["place_name"]).first()
+    place = Place.query.filter_by(id=req["id"]).first()
+    if place is None:
+        return "no place with such id"
     photos_to_delete = Photo.query.filter_by(place_id = place.id)
 
     for photo in photos_to_delete:
@@ -161,10 +166,64 @@ def get_near_places():
             'country': place.country,
             'province': place.province,
             'description': place.description,
-            'type': place.province,
+            'type': place.type,
+            'likes_count': place.likes_count,
             'photo': photo_url
         }
         )
+    return jsonify(res_json)
+
+
+@app.route("/api/places/get_most_interesting", methods=["GET", "POST"])
+def get_interesting_places():
+    req = request.json
+    places = Place.query.order_by(db.desc(Place.likes_count)).limit(req['id'])
+    res_json = {
+        'places': []
+    }
+    for place in places:
+        photo = Photo.query.filter_by(place_id=place.id).limit(1).first()
+        photo_url = None
+        if photo:
+            photo_url = photo.photo_url
+
+        res_json['places'].append({
+            'id': place.id,
+            'latitude': place.latitude,
+            'longitude': place.longitude,
+            'creator_name': place.creator_name,
+            'place_name': place.place_name,
+            'country': place.country,
+            'province': place.province,
+            'description': place.description,
+            'type': place.type,
+            'likes_count': place.likes_count,
+            'photo': photo_url
+        }
+        )
+    return jsonify(res_json)
+
+
+@app.route("/api/places/get_info", methods=["GET", "POST"])
+def get_place_info():
+    req = request.json
+    place = Place.query.filter_by(id = req['id']).first()
+    if place is None:
+        return "no place with such id"
+    photos_to_show = Photo.query.filter_by(place_id=place.id)
+    res_json = {
+        'id': place.id,
+        'latitude': place.latitude,
+        'longitude': place.longitude,
+        'creator_name': place.creator_name,
+        'place_name': place.place_name,
+        'country': place.country,
+        'province': place.province,
+        'description': place.description,
+        'type': place.type,
+        'likes_count': place.likes_count,
+        'photo': [photo.photo_url for photo in photos_to_show]
+    }
     return jsonify(res_json)
 
 
