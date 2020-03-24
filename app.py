@@ -1,10 +1,12 @@
 import base64
+import math
 import os
 from io import BytesIO
 
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask, request, make_response, jsonify
 from PIL import Image
+from sqlalchemy import func
 
 import settings
 
@@ -82,7 +84,7 @@ def create_places():
         province=req["province"],
         type=req["type"],
         description=req["description"],
-        likes_count=0
+        likes_count=2
                       )
 
     db.session.add(place_row)
@@ -124,6 +126,46 @@ def delete_place():
     db.session.delete(place)
     db.session.commit()
     return jsonify(req)
+
+
+@app.route("/api/places/get_near", methods=["GET", "POST"])
+def get_near_places():
+    req = request.json
+    nearby_places = Place.query.filter(
+        func.acos(
+            func.sin(req['latitude']) * func.sin(Place.latitude)
+            +
+            func.cos(req['latitude']) * func.cos(Place.latitude) * func.cos(Place.longitude - (req['longitude']))) * 6371
+        <= req['radius']
+    ).order_by(db.desc(Place.likes_count)).limit(req['limit'])
+
+    res_json = {
+        'places': []
+    }
+    for place in nearby_places:
+        photo = Photo.query.filter_by(place_id=place.id).limit(1).first()
+        photo_url = None
+        if photo:
+            photo_url = photo.photo_url
+        # print(place.place_name)
+        # print(math.acos(
+        #     math.sin(req['latitude']) * math.sin(place.latitude)
+        #     +
+        #     math.cos(req['latitude']) * math.cos(place.latitude) * math.cos(place.longitude - (req['longitude']))) * 6371)
+        res_json['places'].append({
+            'id': place.id,
+            'latitude': place.latitude,
+            'longitude': place.longitude,
+            'creator_name': place.creator_name,
+            'place_name': place.place_name,
+            'country': place.country,
+            'province': place.province,
+            'description': place.description,
+            'type': place.province,
+            'photo': photo_url
+        }
+        )
+    return jsonify(res_json)
 
 
 @app.route("/", methods=["GET", "POST"])
