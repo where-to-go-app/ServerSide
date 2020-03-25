@@ -2,6 +2,7 @@ import os
 import uuid
 
 from flask import Flask, request, jsonify
+from sqlalchemy import func
 
 import settings
 from models import *
@@ -178,19 +179,59 @@ def like():
 
 
 # Comments
-@app.route("/api/comments/create", methods=["GET"])
+@app.route("/api/comments/create", methods=["POST"])
 def create_comment():
     return "create"
 
 
-@app.route("/api/comments/update", methods=["GET"])
+@app.route("/api/comments/update", methods=["POST"])
 def update_comment():
     return "update"
 
 
-@app.route("/api/comments/delete", methods=["GET"])
+@app.route("/api/comments/delete", methods=["POST"])
 def delete_comment():
     return "delete"
+
+
+@app.route("/api/places/get_near", methods=["POST"])
+def get_near_places():
+    latitude = request.args.get("latitude")
+    longitude = request.args.get("longitude")
+    radius = request.args.get("radius")
+    limit = request.args.get("limit")
+
+    nearby_places = Place.query.filter(
+        func.acos(
+            func.sin(latitude) * func.sin(Place.latitude)
+            +
+            func.cos(latitude) * func.cos(Place.latitude) * func.cos(Place.longitude - longitude)) * 6371
+        <= radius
+    ).order_by(db.desc(Place.likes_count)).limit(limit)
+
+    res_json = {
+        'places': []
+    }
+    for place in nearby_places:
+        photo = Photo.query.filter_by(place_id=place.id).limit(1).first()
+        photo_url = None
+        if photo:
+            photo_url = photo.photo_url
+        res_json['places'].append(
+            {
+                'id': place.id,
+                'latitude': place.latitude,
+                'longitude': place.longitude,
+                'creator_name': place.creator_name,
+                'place_name': place.place_name,
+                'country': place.country,
+                'province': place.province,
+                'description': place.description,
+                'type': place.province,
+                'photo': photo_url
+            }
+        )
+    return jsonify(res_json)
 
 
 # Test
