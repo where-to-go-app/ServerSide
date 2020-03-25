@@ -1,0 +1,8 @@
+secret_string = ""
+site_hostname = ""
+database_username = ""
+database_password = ""
+database_hostname = ""
+database_name = ""
+images_dir = ""
+auth_secret_string = ""
