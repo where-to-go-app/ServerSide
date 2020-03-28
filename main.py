@@ -27,6 +27,7 @@ RESPONSE_OK = "ok"
 CODE_USER_NOT_FOUND = 1
 CODE_AUTH_ERROR = 2
 CODE_NO_PERMISSION = 3
+CODE_ENTITY_NOT_FOUND = 4
 
 
 ALLOWED_EXTENSIONS = {"png"}
@@ -127,6 +128,8 @@ def update_place():
 
     # если пользователь - не автор места, тогда вернуть ошибку
     place = Place.query.get(place_id)
+    if place is None:
+        return jsonify(ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="place was not found"))
     if place.creator_id != creator.client_id:
         return jsonify(
             ErrorResponse(code=CODE_NO_PERMISSION, message="user have not permission to edit this place"))
@@ -151,6 +154,9 @@ def delete_place():
 
     # если пользователь - не автор места, тогда вернуть ошибку
     place = Place.query.get(place_id)
+    if place is None:
+        return jsonify(ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="place was not found"))
+
     if place.creator_id != creator.client_id:
         return jsonify(
             ErrorResponse(code=CODE_NO_PERMISSION, message="user have not permission to edit this place"))
@@ -172,25 +178,137 @@ def allowed_file(filename):
 
 
 # Likes
-@app.route("/api/likes/like", methods=["POST"])
-def like():
-    return "like"
+@app.route("/api/likes/add_like", methods=["POST"])
+def add_like():
+    place_id = request.args.get('place_id')
+    user_token = request.args.get('user_token')
+
+    # найти пользователя по токену
+    user = User.query.filter_by(user_token=user_token)
+    if user is None:
+        return jsonify(ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found"))
+
+    new_like = Like(
+        place_id=place_id,
+        user_id=user.first().client_id
+    )
+    db.session.add(new_like)
+    db.session.commit()
+    return RESPONSE_OK
+
+
+@app.route("/api/likes/delete_like", methods=["POST"])
+def delete_like():
+    like_id = request.args.get('like_id')
+    user_token = request.args.get('user_token')
+
+    # найти пользователя по токену
+    user = User.query.filter_by(user_token=user_token)
+    if user is None:
+        return jsonify(ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found"))
+
+    like = Like.query.filter_by(id=like_id)
+    # может ли пользователь удалить лайк
+    if like.first().user_id != user.first().client_id:
+        return jsonify(
+            ErrorResponse(code=CODE_NO_PERMISSION, message="user have not permission to edit this like"))
+
+    db.session.delete(like)
+    db.session.commit()
+    return RESPONSE_OK
 
 
 # Comments
 @app.route("/api/comments/create", methods=["GET"])
 def create_comment():
-    return "create"
+    place_id = request.args.get('place_id')
+    user_token = request.args.get('user_token')
+    comment_text = request.args.get('comment_text')
+
+    # найти пользователя по токену
+    user = User.query.filter_by(user_token=user_token)
+    if user is None:
+        return jsonify(ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found"))
+
+    comment = Comment(
+        place_id=place_id,
+        text=comment_text,
+        user_id=user.first().client_id
+    )
+    db.session.add(comment)
+    db.session.commit()
+    return RESPONSE_OK
 
 
 @app.route("/api/comments/update", methods=["GET"])
 def update_comment():
-    return "update"
+    comment_id = request.args.get('comment_id')
+    user_token = request.args.get('user_token')
+    new_comment_text = request.args.get('comment_text')
+
+    # найти пользователя по токену
+    user = User.query.filter_by(user_token=user_token)
+    if user is None:
+        return jsonify(ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found"))
+
+    # проверка, существует ли комментарий с таким id
+    comment = Comment.query.filter_by(id=comment_id)
+    if comment is None:
+        return jsonify(ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="comment was not found"))
+    # проверка, может ли пользователь изменять данный комментарий
+    if comment.user_id != user.client_id:
+        return jsonify(ErrorResponse(code=CODE_NO_PERMISSION, message="user have no permission to update this comment"))
+
+    comment.text = new_comment_text
+    db.session.commit()
+    return RESPONSE_OK
 
 
 @app.route("/api/comments/delete", methods=["GET"])
 def delete_comment():
-    return "delete"
+    comment_id = request.args.get('comment_id')
+    user_token = request.args.get('user_token')
+
+    # найти пользователя по токену
+    user = User.query.filter_by(user_token=user_token)
+    if user is None:
+        return jsonify(ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found"))
+
+    # проверка, существует ли комментарий с таким id
+    comment = Comment.query.filter_by(id=comment_id)
+    if comment is None:
+        return jsonify(ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="comment was not found"))
+    # проверка, может ли пользователь изменять данный комментарий
+    if comment.first().user_id != user.first().client_id:
+        return jsonify(ErrorResponse(code=CODE_NO_PERMISSION, message="user have no permission to delete this comment"))
+
+    db.session.delete(comment)
+    db.session.commit()
+    return RESPONSE_OK
+
+
+@app.route("/api/places/get", methods=["GET"])
+def get_place_info_by_id():
+    place_id = request.args.get('comment_id')
+    user_token = request.args.get('user_token')
+
+    # найти пользователя по токену
+    user = User.query.filter_by(user_token=user_token)
+    if user is None:
+        return jsonify(ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found"))
+
+    # проверка, существует ли место с таким id
+    place = Comment.query.filter_by(id=place_id)
+    if place is None:
+        return jsonify(ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="place was not found"))
+
+    photos = Photo.query.filter_by(place_id=place_id)
+    likes_count = Like.query.filter_by(place_id=place_id).count()
+    comments = Comment.query.filter_by(place_id=place_id)
+
+    # TODO как-нибудь сделать отправку всей информации на клиент. Оставляю это тебе, так как пока не знаю, как будет лучше
+
+    return RESPONSE_OK
 
 
 # Test
