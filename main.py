@@ -2,9 +2,9 @@ import os
 import uuid
 
 from flask import Flask, request, jsonify
-
 import settings
 from models import *
+from sqlalchemy import and_
 
 app = Flask(__name__)
 app.debug = True
@@ -18,8 +18,10 @@ DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databas
 app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URI
 app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db.init_app(app)
 
+db.init_app(app)
+with app.app_context():
+    db.create_all()
 
 RESPONSE_OK = "ok"
 
@@ -28,7 +30,6 @@ CODE_USER_NOT_FOUND = 1
 CODE_AUTH_ERROR = 2
 CODE_NO_PERMISSION = 3
 CODE_ENTITY_NOT_FOUND = 4
-
 
 ALLOWED_EXTENSIONS = {"png"}
 
@@ -40,29 +41,31 @@ def auth_user():
     # если пользователя нет, создаем пользователя, генерируем новый user_token с помощью uuid, и возвращаем его
     # если пользователь есть, отдаем уже когда-то созданный user_token
     secret_string = request.args.get("auth_secret_string")
+    print(secret_string)
     if secret_string is None or secret_string != settings.auth_secret_string:
-        return jsonify(ErrorResponse(code=CODE_AUTH_ERROR, message="Неверный секретный ключ"))
+        return ErrorResponse(code=CODE_AUTH_ERROR, message="Неверный секретный ключ").to_json()
 
     client_id = request.args.get("client_id")
     first_name = request.args.get("first_name")
     last_name = request.args.get("last_name")
 
-    user = User.query.get(client_id)
-    if user is None:
+    users = User.query.get(client_id)
+    if users is None:
         user_token = uuid.uuid4()
 
         new_user = User(
             client_id=client_id,
-            user_token=user_token,
+            user_token=str(user_token),
             first_name=first_name,
             last_name=last_name)
 
         db.session.add(new_user)
         db.session.commit()
     else:
-        user_token = user.user_token
+        user_token = users.user_token
 
-    return user_token
+    return jsonify({"code": RESPONSE_OK,
+                    "user_token": str(user_token)})
 
 
 # Places
@@ -75,12 +78,13 @@ def create_place():
     longitude = request.args.get('longitude')
     user_token = request.args.get('user_token')
     country = request.args.get('country')
+    address = request.args.get('address')
     photos = request.files
 
     # найти пользователя по токену
-    creator = User.query.filter_by(user_token=user_token)
+    creator = User.query.filter_by(user_token=user_token).first()
     if creator is None:
-        return jsonify(ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found"))
+        return ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found").to_json()
 
     # сохранить место
     place = Place(
@@ -89,15 +93,17 @@ def create_place():
         creator_id=creator.client_id,
         place_name=place_name,
         place_desc=place_desc,
-        country=country
+        country=country,
+        address=address
     )
     db.session.add(place)
     db.session.commit()
 
     # сохранить фотки
     for p in photos:
-        if allowed_file(p.filename):
+        if allowed_file(p):
             continue
+        ph = photos[p]
         name = "{}.png".format(uuid.uuid4())
         url = "https://{}/{}/{}".format(settings.site_hostname, settings.images_dir, name)
         photo = Photo(
@@ -108,9 +114,9 @@ def create_place():
 
         db.session.add(photo)
         db.session.commit()
-        p.save(os.path.join(settings.images_dir, name))
+        ph.save(os.path.join(settings.images_dir, name))
 
-    return RESPONSE_OK
+    return jsonify({"code": RESPONSE_OK})
 
 
 @app.route("/api/places/update", methods=["POST"])
@@ -122,23 +128,22 @@ def update_place():
     user_token = request.args.get('user_token')
 
     # Найти пользователя по токену
-    creator = User.query.filter_by(user_token=user_token)
+    creator = User.query.filter_by(user_token=user_token).first()
     if creator is None:
-        return jsonify(ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found"))
+        return ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found").to_json()
 
     # если пользователь - не автор места, тогда вернуть ошибку
     place = Place.query.get(place_id)
     if place is None:
-        return jsonify(ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="place was not found"))
+        return ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="place was not found").to_json()
     if place.creator_id != creator.client_id:
-        return jsonify(
-            ErrorResponse(code=CODE_NO_PERMISSION, message="user have not permission to edit this place"))
+        return ErrorResponse(code=CODE_NO_PERMISSION, message="user have not permission to edit this place").to_json()
 
     place.place_name = place_name
     place.place_desc = place_desc
     db.session.commit()
 
-    return RESPONSE_OK
+    return jsonify({"code": RESPONSE_OK})
 
 
 @app.route("/api/places/delete", methods=["POST"])
@@ -148,29 +153,29 @@ def delete_place():
     user_token = request.args.get('user_token')
 
     # Найти пользователя по токену
-    creator = User.query.filter_by(user_token=user_token)
+    creator = User.query.filter_by(user_token=user_token).first()
     if creator is None:
-        return jsonify(ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found"))
-
+        return ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found").to_json()
     # если пользователь - не автор места, тогда вернуть ошибку
     place = Place.query.get(place_id)
     if place is None:
-        return jsonify(ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="place was not found"))
+        return ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="place was not found").to_json()
 
     if place.creator_id != creator.client_id:
-        return jsonify(
-            ErrorResponse(code=CODE_NO_PERMISSION, message="user have not permission to edit this place"))
+        return ErrorResponse(code=CODE_NO_PERMISSION, message="user have not permission to edit this place").to_json()
 
     # Удалить файлы
     photos = Photo.query.filter_by(place_id=place_id)
     for p in photos:
+        db.session.delete(p)
         os.remove(os.path.join(settings.images_dir, p.photo_name))
 
     # Удалить запись из бд
+
     db.session.delete(place)
     db.session.commit()
 
-    return RESPONSE_OK
+    return jsonify({"code": RESPONSE_OK})
 
 
 def allowed_file(filename):
@@ -184,17 +189,24 @@ def add_like():
     user_token = request.args.get('user_token')
 
     # найти пользователя по токену
-    user = User.query.filter_by(user_token=user_token)
+    user = User.query.filter_by(user_token=user_token).first()
     if user is None:
-        return jsonify(ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found"))
+        return ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found").to_json()
 
+    place = Place.query.filter_by(id=place_id).first()
+    if place is None:
+        return ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="place was not found").to_json()
+
+    like = Like.query.filter_by(user_id=user.client_id).first()
+    if like is not None:
+        return ErrorResponse(code=CODE_NO_PERMISSION, message="user has no permission to set a like twice").to_json()
     new_like = Like(
         place_id=place_id,
-        user_id=user.first().client_id
+        user_id=user.client_id
     )
     db.session.add(new_like)
     db.session.commit()
-    return RESPONSE_OK
+    return jsonify({"code": RESPONSE_OK})
 
 
 @app.route("/api/likes/delete_like", methods=["POST"])
@@ -203,112 +215,157 @@ def delete_like():
     user_token = request.args.get('user_token')
 
     # найти пользователя по токену
-    user = User.query.filter_by(user_token=user_token)
+    user = User.query.filter_by(user_token=user_token).first()
     if user is None:
-        return jsonify(ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found"))
+        return ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found").to_json()
 
-    like = Like.query.filter_by(id=like_id)
+    like = Like.query.filter_by(id=like_id).first()
+    if like is None:
+        return ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="like with such id was not found").to_json()
     # может ли пользователь удалить лайк
-    if like.first().user_id != user.first().client_id:
-        return jsonify(
-            ErrorResponse(code=CODE_NO_PERMISSION, message="user have not permission to edit this like"))
+    if like.user_id != user.client_id:
+        return ErrorResponse(code=CODE_NO_PERMISSION, message="user have not permission to delete this like").to_json()
 
     db.session.delete(like)
     db.session.commit()
-    return RESPONSE_OK
+    return jsonify({"code": RESPONSE_OK})
 
 
 # Comments
-@app.route("/api/comments/create", methods=["GET"])
+@app.route("/api/comments/create", methods=["POST"])
 def create_comment():
     place_id = request.args.get('place_id')
     user_token = request.args.get('user_token')
     comment_text = request.args.get('comment_text')
 
     # найти пользователя по токену
-    user = User.query.filter_by(user_token=user_token)
+    user = User.query.filter_by(user_token=user_token).first()
     if user is None:
-        return jsonify(ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found"))
+        return ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found").to_json()
+
+    place = Place.query.filter_by(id=place_id).first()
+    if place is None:
+        return ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="place was not found").to_json()
 
     comment = Comment(
         place_id=place_id,
         text=comment_text,
-        user_id=user.first().client_id
+        user_id=user.client_id
     )
     db.session.add(comment)
     db.session.commit()
-    return RESPONSE_OK
+    return jsonify({"code": RESPONSE_OK})
 
 
-@app.route("/api/comments/update", methods=["GET"])
+@app.route("/api/comments/update", methods=["POST"])
 def update_comment():
     comment_id = request.args.get('comment_id')
     user_token = request.args.get('user_token')
     new_comment_text = request.args.get('comment_text')
 
     # найти пользователя по токену
-    user = User.query.filter_by(user_token=user_token)
+    user = User.query.filter_by(user_token=user_token).first()
     if user is None:
-        return jsonify(ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found"))
+        return ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found").to_json()
 
     # проверка, существует ли комментарий с таким id
-    comment = Comment.query.filter_by(id=comment_id)
+    comment = Comment.query.filter_by(id=comment_id).first()
     if comment is None:
-        return jsonify(ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="comment was not found"))
+        return ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="comment was not found").to_json()
     # проверка, может ли пользователь изменять данный комментарий
     if comment.user_id != user.client_id:
-        return jsonify(ErrorResponse(code=CODE_NO_PERMISSION, message="user have no permission to update this comment"))
+        return ErrorResponse(code=CODE_NO_PERMISSION,
+                             message="user have no permission to update this comment").to_json()
 
     comment.text = new_comment_text
     db.session.commit()
-    return RESPONSE_OK
+    return jsonify({"code": RESPONSE_OK})
 
 
-@app.route("/api/comments/delete", methods=["GET"])
+@app.route("/api/comments/delete", methods=["POST"])
 def delete_comment():
     comment_id = request.args.get('comment_id')
     user_token = request.args.get('user_token')
 
     # найти пользователя по токену
-    user = User.query.filter_by(user_token=user_token)
+    user = User.query.filter_by(user_token=user_token).first()
     if user is None:
-        return jsonify(ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found"))
+        return ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found").to_json()
 
     # проверка, существует ли комментарий с таким id
-    comment = Comment.query.filter_by(id=comment_id)
+    comment = Comment.query.filter_by(id=comment_id).first()
     if comment is None:
-        return jsonify(ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="comment was not found"))
+        return ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="comment was not found").to_json()
     # проверка, может ли пользователь изменять данный комментарий
-    if comment.first().user_id != user.first().client_id:
-        return jsonify(ErrorResponse(code=CODE_NO_PERMISSION, message="user have no permission to delete this comment"))
+    if comment.user_id != user.client_id:
+        return ErrorResponse(code=CODE_NO_PERMISSION,
+                             message="user have no permission to delete this comment").to_json()
 
     db.session.delete(comment)
     db.session.commit()
-    return RESPONSE_OK
+    return jsonify({"code": RESPONSE_OK})
 
 
-@app.route("/api/places/get", methods=["GET"])
+@app.route("/api/places/get_place_by_id", methods=["GET"])
 def get_place_info_by_id():
-    place_id = request.args.get('comment_id')
+    place_id = request.args.get('place_id')
     user_token = request.args.get('user_token')
 
     # найти пользователя по токену
-    user = User.query.filter_by(user_token=user_token)
+    user = User.query.filter_by(user_token=user_token).first()
     if user is None:
-        return jsonify(ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found"))
+        return ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found").to_json()
 
     # проверка, существует ли место с таким id
-    place = Comment.query.filter_by(id=place_id)
+    place = Place.query.filter_by(id=place_id).first()
     if place is None:
-        return jsonify(ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="place was not found"))
+        return ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="place was not found").to_json()
 
-    photos = Photo.query.filter_by(place_id=place_id)
+    photos = [{
+        "photo_name": photo.photo_name,
+        "photo_url": photo.photo_url,
+        "id": photo.id
+    } for photo in Photo.query.filter_by(place_id=place_id)]
     likes_count = Like.query.filter_by(place_id=place_id).count()
-    comments = Comment.query.filter_by(place_id=place_id)
+    comments = [{
+        "place_id": comment.place_id,
+        "comment_text": comment.text,
+        "id": comment.id
+    } for comment in Comment.query.filter_by(place_id=place_id)]
 
-    # TODO как-нибудь сделать отправку всей информации на клиент. Оставляю это тебе, так как пока не знаю, как будет лучше
+    response = {}
+    response["code"] = RESPONSE_OK
+    response["place"] = {}
+    response["place"]["id"] = place.id
+    response["place"]["place_name"] = place.place_name
+    response["place"]["longitude"] = place.longitude
+    response["place"]["latitude"] = place.latitude
+    response["place"]["country"] = place.country
+    response["place"]["address"] = place.address
+    response["place"]["creator_id"] = place.creator_id
+    response["place"]["place_desc"] = place.place_desc
+    response["place"]["photos"] = photos
+    response["place"]["likes_count"] = likes_count
+    response["place"]["comments"] = comments
 
-    return RESPONSE_OK
+    return jsonify(response)
+
+
+@app.route("/api/places/get_places_by_bounding_box", methods=["GET"])
+def get_places_by_bounding_box():
+    up_left_x = request.args.get('up_left_x')
+    up_left_y = request.args.get('up_left_y')
+    bottom_right_x = request.args.get('bottom_right_x')
+    bottom_right_y = request.args.get('bottom_right_y')
+    places = [{"id": place.id} for place in Place.query.
+        filter(bottom_right_y < Place.longitude).
+        filter(Place.longitude < up_left_y).
+        filter(up_left_x < Place.latitude).
+        filter(Place.latitude < bottom_right_x)]
+
+    return jsonify({"code": RESPONSE_OK,
+                    "places": places
+                    })
 
 
 # Test

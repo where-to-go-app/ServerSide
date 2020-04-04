@@ -1,4 +1,7 @@
+from flask import jsonify
+
 from database import db
+
 
 
 class User(db.Model):
@@ -20,6 +23,7 @@ class Place(db.Model):
     place_name = db.Column(db.String(256))
     place_desc = db.Column(db.String(256))
     country = db.Column(db.String(256))
+    address = db.Column(db.String(256))
     # likes_count = db.Column(db.Integer(), default=0)    Мы можем каждый раз считать лайки из таблицы лайков
     # comments_count = db.Column(db.Integer(), default=0) То же самое с комментариями
 
@@ -54,3 +58,10 @@ class ErrorResponse:
     def __init__(self, code, message):
         self.code = code
         self.message = message
+
+    def to_json(self):
+        return jsonify({
+            'code': self.code,
+            'message': self.message
+        })
+

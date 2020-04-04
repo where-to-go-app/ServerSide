@@ -26,4 +26,15 @@ def init_app():
 
 def test_home_page(init_app):
     response = init_app.get('/')
-    assert response.status_code == 200
+    assert response.status_code == 2
+
+
+def test_auth(init_app):
+    response = init_app.post("/api/users/auth", data = {
+        "auth_secret_string":"12345",
+        "client_id": 12344,
+        "first_name": "alex",
+        "last_name": "dom"
+    })
+    assert User.query is not None
+    assert response.status_code == 2
