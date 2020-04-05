@@ -23,7 +23,7 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
-RESPONSE_OK = "ok"
+RESPONSE_OK = 0
 
 # коды ошибок, возращаемых сервером
 CODE_USER_NOT_FOUND = 1
@@ -43,7 +43,7 @@ def auth_user():
     secret_string = request.args.get("auth_secret_string")
     print(secret_string)
     if secret_string is None or secret_string != settings.auth_secret_string:
-        return ErrorResponse(code=CODE_AUTH_ERROR, message="Неверный секретный ключ").to_json()
+        return ErrorResponse(code=CODE_AUTH_ERROR, message="wrong secret key").to_json()
 
     client_id = request.args.get("client_id")
     first_name = request.args.get("first_name")

@@ -5,8 +5,8 @@ import requests
 
 def test_auth():
     response = requests.post("http://localhost:8080/api/users/auth", params={
-        "auth_secret_string":"12345",
-        "client_id": 1234454,
+        "auth_secret_string": "12345",
+        "client_id": 12344549,
         "first_name": "alex",
         "last_name": "dom"
     })
@@ -105,7 +105,8 @@ def test_find_places_by_bounding_box(up_left_x, up_left_y, bottom_right_x, botto
         "up_left_x": up_left_x,
         "up_left_y": up_left_y,
         "bottom_right_x": bottom_right_x,
-        "bottom_right_y": bottom_right_y
+        "bottom_right_y": bottom_right_y,
+        "user_token": "314790c3-fcf3-485d-87af-dd821e082c21"
     })
     print(response.text)
 
@@ -113,7 +114,7 @@ def test_find_places_by_bounding_box(up_left_x, up_left_y, bottom_right_x, botto
 if __name__ == "__main__":
     USER_TOKEN_1 = "314790c3-fcf3-485d-87af-dd821e082c21"
     USER_TOKEN_2 = "ed5040d0-fb0a-4b21-84c5-3c04f59fa1cb"
-    # test_auth()
+    test_auth()
     # test_create_place("ed5040d0-fb0a-4b21-84c5-3c04f59fa1cb", 54.526252, 41.959880)
     # test_create_place("ed5040d0-fb0a-4b21-84c5-3c04f59fa1cb", 53.778152, 45.775179)
     # test_create_place("ed5040d0-fb0a-4b21-84c5-3c04f59fa1cb", 30.778152, 45.775179)
@@ -124,4 +125,5 @@ if __name__ == "__main__":
     # test_delete_like("ed5040d0-fb0a-4b21-84c5-3c0459fa1cb")
     # test_delete_comment("314790c3-fcf3-485d-87af-dd821e082c21")
     # test_delete_place()
-    test_find_places_by_bounding_box(35.753610, 57.555763, 49.710271, 50.742034)
+    #test_get_place_info_by_id(9, "314790c3-fcf3-485d-87af-dd821e082c21")
+    #test_find_places_by_bounding_box(35.753610, 57.555763, 49.710271, 50.742034)
