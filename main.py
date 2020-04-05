@@ -125,6 +125,10 @@ def update_place():
     place_id = request.args.get('place_id')
     place_name = request.args.get('place_name')
     place_desc = request.args.get('place_desc')
+    latitude = request.args.get('latitude')
+    longitude = request.args.get('longitude')
+    country = request.args.get('country')
+    address = request.args.get('address')
     user_token = request.args.get('user_token')
 
     # Найти пользователя по токену
@@ -137,10 +141,14 @@ def update_place():
     if place is None:
         return ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="place was not found").to_json()
     if place.creator_id != creator.client_id:
-        return ErrorResponse(code=CODE_NO_PERMISSION, message="user have not permission to edit this place").to_json()
+        return ErrorResponse(code=CODE_NO_PERMISSION, message="user has not permission to edit this place").to_json()
 
     place.place_name = place_name
     place.place_desc = place_desc
+    place.latitude = latitude
+    place.longitude = longitude
+    place.country = country
+    place.address = address
     db.session.commit()
 
     return jsonify({"code": RESPONSE_OK})
@@ -162,7 +170,7 @@ def delete_place():
         return ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="place was not found").to_json()
 
     if place.creator_id != creator.client_id:
-        return ErrorResponse(code=CODE_NO_PERMISSION, message="user have not permission to edit this place").to_json()
+        return ErrorResponse(code=CODE_NO_PERMISSION, message="user has not permission to edit this place").to_json()
 
     # Удалить файлы
     photos = Photo.query.filter_by(place_id=place_id)
@@ -224,7 +232,7 @@ def delete_like():
         return ErrorResponse(code=CODE_ENTITY_NOT_FOUND, message="like with such id was not found").to_json()
     # может ли пользователь удалить лайк
     if like.user_id != user.client_id:
-        return ErrorResponse(code=CODE_NO_PERMISSION, message="user have not permission to delete this like").to_json()
+        return ErrorResponse(code=CODE_NO_PERMISSION, message="user has not permission to delete this like").to_json()
 
     db.session.delete(like)
     db.session.commit()
@@ -275,7 +283,7 @@ def update_comment():
     # проверка, может ли пользователь изменять данный комментарий
     if comment.user_id != user.client_id:
         return ErrorResponse(code=CODE_NO_PERMISSION,
-                             message="user have no permission to update this comment").to_json()
+                             message="user has no permission to update this comment").to_json()
 
     comment.text = new_comment_text
     db.session.commit()
@@ -299,7 +307,7 @@ def delete_comment():
     # проверка, может ли пользователь изменять данный комментарий
     if comment.user_id != user.client_id:
         return ErrorResponse(code=CODE_NO_PERMISSION,
-                             message="user have no permission to delete this comment").to_json()
+                             message="user has no permission to delete this comment").to_json()
 
     db.session.delete(comment)
     db.session.commit()
@@ -357,6 +365,12 @@ def get_places_by_bounding_box():
     up_left_y = request.args.get('up_left_y')
     bottom_right_x = request.args.get('bottom_right_x')
     bottom_right_y = request.args.get('bottom_right_y')
+    user_token = request.args.get('user_token')
+
+    # найти пользователя по токену
+    user = User.query.filter_by(user_token=user_token).first()
+    if user is None:
+        return ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found").to_json()
     places = [{"id": place.id} for place in Place.query.
         filter(bottom_right_y < Place.longitude).
         filter(Place.longitude < up_left_y).
