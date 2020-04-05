@@ -188,7 +188,7 @@ code: 1, user was not found - не существует пользователя
 - code: 4, comment was not found - комментария с таким id не существует
 - code: 3, user has no permission to update this comment - пользователь с таким user_token не может изменить этот комментарий
 
-### /api/likes/delete_like [POST]
+### /api/likes/delete_comment [POST]
 ##### Параметры:
 - comment_id - id комментария
 - user_token - токен пользователя 
