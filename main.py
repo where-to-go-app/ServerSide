@@ -23,9 +23,8 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
+# коды, возращаемые сервером
 RESPONSE_OK = 0
-
-# коды ошибок, возращаемых сервером
 CODE_USER_NOT_FOUND = 1
 CODE_AUTH_ERROR = 2
 CODE_NO_PERMISSION = 3
@@ -65,7 +64,7 @@ def auth_user():
         user_token = users.user_token
 
     return jsonify({"code": RESPONSE_OK,
-                    "user_token": str(user_token)})
+                    "message": str(user_token)})
 
 
 # Places
@@ -314,7 +313,7 @@ def delete_comment():
     return jsonify({"code": RESPONSE_OK})
 
 
-@app.route("/api/places/get_place_by_id", methods=["GET"])
+@app.route("/api/places/place_by_id", methods=["GET"])
 def get_place_info_by_id():
     place_id = request.args.get('place_id')
     user_token = request.args.get('user_token')
@@ -359,7 +358,7 @@ def get_place_info_by_id():
     return jsonify(response)
 
 
-@app.route("/api/places/get_places_by_bounding_box", methods=["GET"])
+@app.route("/api/places/places_around", methods=["GET"])
 def get_places_by_bounding_box():
     up_left_x = request.args.get('up_left_x')
     up_left_y = request.args.get('up_left_y')
