@@ -101,7 +101,7 @@ def test_get_place_info_by_id(place_id, user_token):
 
 
 def test_find_places_by_bounding_box(up_left_x, up_left_y, bottom_right_x, bottom_right_y):
-    response = requests.get("http://valer14356.pythonanywhere.com/api/places_around", params={
+    response = requests.get("http://valer14356.pythonanywhere.com/api/places/places_around", params={
         "up_left_x": up_left_x,
         "up_left_y": up_left_y,
         "bottom_right_x": bottom_right_x,
@@ -125,4 +125,4 @@ if __name__ == "__main__":
     # test_delete_like("ed5040d0-fb0a-4b21-84c5-3c0459fa1cb")
     # test_delete_comment("314790c3-fcf3-485d-87af-dd821e082c21")
     # test_delete_place()
-    test_find_places_by_bounding_box(35.753610, 57.555763, 49.710271, 50.742034)
+    test_find_places_by_bounding_box(20, 70, 50, -50.742034)

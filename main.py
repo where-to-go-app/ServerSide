@@ -371,10 +371,10 @@ def get_places_by_bounding_box():
     if user is None:
         return ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found").to_json()
     places = [{"id": place.id} for place in Place.query.
-        filter(bottom_right_y < Place.longitude).
-        filter(Place.longitude < up_left_y).
-        filter(up_left_x < Place.latitude).
-        filter(Place.latitude < bottom_right_x)]
+        filter(bottom_right_y < Place.latitude).
+        filter(Place.latitude < up_left_y).
+        filter(up_left_x < Place.longitude).
+        filter(Place.longitude < bottom_right_x)]
 
     return jsonify({"code": RESPONSE_OK,
                     "places": places
