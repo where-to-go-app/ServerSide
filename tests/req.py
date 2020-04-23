@@ -101,11 +101,12 @@ def test_get_place_info_by_id(place_id, user_token):
 
 
 def test_find_places_by_bounding_box(up_left_x, up_left_y, bottom_right_x, bottom_right_y):
-    response = requests.get("http://localhost:8080/api/places/get_places_by_bounding_box", params={
+    response = requests.get("http://valer14356.pythonanywhere.com/api/places_around", params={
         "up_left_x": up_left_x,
         "up_left_y": up_left_y,
         "bottom_right_x": bottom_right_x,
-        "bottom_right_y": bottom_right_y
+        "bottom_right_y": bottom_right_y,
+        "user_token": "12345"
     })
     print(response.text)
 
