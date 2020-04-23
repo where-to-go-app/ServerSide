@@ -370,7 +370,10 @@ def get_places_by_bounding_box():
     user = User.query.filter_by(user_token=user_token).first()
     if user is None:
         return ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found").to_json()
-    places = [{"id": place.id} for place in Place.query.
+    places = [{"id": place.id,
+               "latitude": place.latitude,
+               "longitude": place.longitude,
+               "place_name":place.place_name} for place in Place.query.
         filter(bottom_right_y < Place.latitude).
         filter(Place.latitude < up_left_y).
         filter(up_left_x < Place.longitude).
