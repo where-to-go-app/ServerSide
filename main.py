@@ -39,14 +39,14 @@ def auth_user():
     # получаем вк client_id, проверяем есть ли пользователь в бд
     # если пользователя нет, создаем пользователя, генерируем новый user_token с помощью uuid, и возвращаем его
     # если пользователь есть, отдаем уже когда-то созданный user_token
-    secret_string = request.args.get("auth_secret_string")
+    secret_string = request.form.get("auth_secret_string")
     print(secret_string)
     if secret_string is None or secret_string != settings.auth_secret_string:
         return ErrorResponse(code=CODE_AUTH_ERROR, message="wrong secret key").to_json()
 
-    client_id = request.args.get("client_id")
-    first_name = request.args.get("first_name")
-    last_name = request.args.get("last_name")
+    client_id = request.form.get("client_id")
+    first_name = request.form.get("first_name")
+    last_name = request.form.get("last_name")
 
     users = User.query.get(client_id)
     if users is None:
@@ -71,15 +71,15 @@ def auth_user():
 @app.route("/api/places/create", methods=["POST"])
 def create_place():
     # получаем параметры из запроса
-    place_name = request.args.get('place_name')
-    place_desc = request.args.get('place_desc')
-    latitude = request.args.get('latitude')
-    longitude = request.args.get('longitude')
-    user_token = request.args.get('user_token')
-    country = request.args.get('country')
-    address = request.args.get('address')
+    place_name = request.form.get('place_name')
+    place_desc = request.form.get('place_desc')
+    latitude = request.form.get('latitude')
+    longitude = request.form.get('longitude')
+    user_token = request.form.get('user_token')
+    country = request.form.get('country')
+    address = request.form.get('address')
     photos = request.files
-
+    print(user_token)
     # найти пользователя по токену
     creator = User.query.filter_by(user_token=user_token).first()
     if creator is None:
@@ -113,7 +113,7 @@ def create_place():
 
         db.session.add(photo)
         db.session.commit()
-        ph.save(os.path.join(settings.images_dir, name))
+        ph.save(os.path.abspath(os.path.join(settings.images_dir, name)))
 
     return jsonify({"code": RESPONSE_OK})
 
@@ -370,10 +370,7 @@ def get_places_by_bounding_box():
     user = User.query.filter_by(user_token=user_token).first()
     if user is None:
         return ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found").to_json()
-    places = [{"id": place.id,
-               "latitude": place.latitude,
-               "longitude": place.longitude,
-               "place_name":place.place_name} for place in Place.query.
+    places = [{"id": place.id} for place in Place.query.
         filter(bottom_right_y < Place.latitude).
         filter(Place.latitude < up_left_y).
         filter(up_left_x < Place.longitude).
@@ -392,4 +389,3 @@ def index():
 
 if __name__ == "__main__":
     app.run("localhost", port=8080)
-

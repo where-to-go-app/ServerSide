@@ -4,8 +4,8 @@ import requests
 
 
 def test_auth():
-    response = requests.post("http://localhost:8080/api/users/auth", params={
-        "auth_secret_string":"12345",
+    response = requests.post("http://valer14356.pythonanywhere.com/api/users/auth", params={
+        "auth_secret_string":"debug",
         "client_id": 1234454,
         "first_name": "alex",
         "last_name": "dom"
@@ -14,7 +14,7 @@ def test_auth():
 
 
 def test_create_place(user_token, long, lat):
-    response = requests.post("http://localhost:8080/api/places/create", params={
+    response = requests.post("http://valer14356.pythonanywhere.com/api/places/create", params={
         "latitude": lat,
         "longitude": long,
         "place_name": "fffffffff",
@@ -113,9 +113,9 @@ def test_find_places_by_bounding_box(up_left_x, up_left_y, bottom_right_x, botto
 
 if __name__ == "__main__":
     USER_TOKEN_1 = "314790c3-fcf3-485d-87af-dd821e082c21"
-    USER_TOKEN_2 = "ed5040d0-fb0a-4b21-84c5-3c04f59fa1cb"
-    # test_auth()
-    # test_create_place("ed5040d0-fb0a-4b21-84c5-3c04f59fa1cb", 54.526252, 41.959880)
+    USER_TOKEN_2 = "1c470743-9c3d-4efb-88ff-e3530e1f97d4"
+    test_auth()
+    #test_create_place(USER_TOKEN_2, 54.526252, 41.959880)
     # test_create_place("ed5040d0-fb0a-4b21-84c5-3c04f59fa1cb", 53.778152, 45.775179)
     # test_create_place("ed5040d0-fb0a-4b21-84c5-3c04f59fa1cb", 30.778152, 45.775179)
     # test_create_place("ed5040d0-fb0a-4b21-84c5-3c04f59fa1cb", 53.778152, 30.775179)
@@ -125,4 +125,4 @@ if __name__ == "__main__":
     # test_delete_like("ed5040d0-fb0a-4b21-84c5-3c0459fa1cb")
     # test_delete_comment("314790c3-fcf3-485d-87af-dd821e082c21")
     # test_delete_place()
-    test_find_places_by_bounding_box(20, 70, 50, -50.742034)
+
