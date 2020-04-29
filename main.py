@@ -380,15 +380,19 @@ def get_places_by_bounding_box():
     user = User.query.filter_by(user_token=user_token).first()
     if user is None:
         return ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found").to_json()
-    places = [{"id": place.id,
-               "place_name": place.place_name,
-               "avatar_url": Photo.query.filter_by(place_id=place.id).filter_by(is_main=True).first().photo_url,
-               "latitude": place.latitude,
-               "longitude": place.longitude} for place in Place.query.
-        filter(bottom_right_y < Place.latitude).
-        filter(Place.latitude < up_left_y).
-        filter(up_left_x < Place.longitude).
-        filter(Place.longitude < bottom_right_x)]
+    place_query = Place.query.filter(bottom_right_y < Place.latitude).filter(Place.latitude < up_left_y).filter(up_left_x < Place.longitude).filter(Place.longitude < bottom_right_x)
+    places = []
+    for place in place_query:
+        avatar = Photo.query.filter_by(place_id=place.id).filter_by(is_main=True).first()
+        if avatar is not None:
+            avatar_url = avatar.photo_url
+        else:
+            avatar_url = None;
+        places.append({"id": place.id,
+                   "place_name": place.place_name,
+                   "avatar_url": avatar_url,
+                   "latitude": place.latitude,
+                   "longitude": place.longitude} )
 
     return jsonify({"code": RESPONSE_OK,
                     "places": places
