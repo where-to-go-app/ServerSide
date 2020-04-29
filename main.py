@@ -98,6 +98,7 @@ def create_place():
     db.session.add(place)
     db.session.commit()
 
+    is_main = True
     # сохранить фотки
     for p in photos:
         if allowed_file(p):
@@ -105,10 +106,18 @@ def create_place():
         ph = photos[p]
         name = "{}.png".format(uuid.uuid4())
         url = "https://{}/{}/{}".format(settings.site_hostname, settings.images_dir, name)
+        if (is_main):
+            is_main_now = True
+            is_main = False
+        else:
+            is_main_now = False
+
+
         photo = Photo(
             place_id=place.id,
             photo_url=url,
-            photo_name=name
+            photo_name=name,
+            is_main=is_main_now
         )
 
         db.session.add(photo)
