@@ -340,7 +340,8 @@ def get_place_info_by_id():
     photos = [{
         "photo_name": photo.photo_name,
         "photo_url": photo.photo_url,
-        "id": photo.id
+        "id": photo.id,
+        "is_main": photo.is_main
     } for photo in Photo.query.filter_by(place_id=place_id)]
     likes_count = Like.query.filter_by(place_id=place_id).count()
     comments = [{
