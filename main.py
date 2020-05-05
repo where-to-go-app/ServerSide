@@ -109,7 +109,7 @@ def create_place():
         url = "https://{}/{}/{}".format(settings.site_hostname, settings.images_dir, name)
         if is_main:
             avatar_photo = Image.open(ph)
-            avatar_photo = avatar_photo.resize(100, 100)
+            avatar_photo = avatar_photo.resize((100, 100))
             name_avatar = "{}.png".format(uuid.uuid4())
             url_avatar = "https://{}/{}/{}".format(settings.site_hostname, settings.images_dir, name_avatar)
             photo = Photo(
