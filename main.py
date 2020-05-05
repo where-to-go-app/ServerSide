@@ -1,6 +1,7 @@
+import io
 import os
 import uuid
-
+from PIL import Image
 from flask import Flask, request, jsonify
 import settings
 from models import *
@@ -106,23 +107,33 @@ def create_place():
         ph = photos[p]
         name = "{}.png".format(uuid.uuid4())
         url = "https://{}/{}/{}".format(settings.site_hostname, settings.images_dir, name)
-        if (is_main):
-            is_main_now = True
+        if is_main:
+            avatar_photo = Image.open(io.BytesIO(ph))
+            avatar_photo = avatar_photo.resize(100, 100)
+            name_avatar = "{}.png".format(uuid.uuid4())
+            url_avatar = "https://{}/{}/{}".format(settings.site_hostname, settings.images_dir, name_avatar)
+            photo = Photo(
+                place_id=place.id,
+                photo_url=url_avatar,
+                photo_name=name_avatar,
+                is_main=True
+            )
             is_main = False
-        else:
-            is_main_now = False
+
+            db.session.add(photo)
+            avatar_photo.save(os.path.abspath(os.path.join(settings.images_dir, name_avatar)))
 
 
         photo = Photo(
             place_id=place.id,
             photo_url=url,
             photo_name=name,
-            is_main=is_main_now
+            is_main=False
         )
 
         db.session.add(photo)
         db.session.commit()
-        ph.save(os.path.abspath(os.path.join(settings.images_dir, name)))
+
 
     return jsonify({"code": RESPONSE_OK})
 

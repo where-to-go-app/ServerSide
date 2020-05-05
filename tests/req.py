@@ -116,7 +116,7 @@ if __name__ == "__main__":
     USER_TOKEN_2 = "1c470743-9c3d-4efb-88ff-e3530e1f97d4"
     test_auth()
     #test_create_place(USER_TOKEN_2, 54.526252, 41.959880)
-    # test_create_place("ed5040d0-fb0a-4b21-84c5-3c04f59fa1cb", 53.778152, 45.775179)
+    test_create_place("ed5040d0-fb0a-4b21-84c5-3c04f59fa1cb", 53.778152, 45.775179)
     # test_create_place("ed5040d0-fb0a-4b21-84c5-3c04f59fa1cb", 30.778152, 45.775179)
     # test_create_place("ed5040d0-fb0a-4b21-84c5-3c04f59fa1cb", 53.778152, 30.775179)
     # test_update_place()
