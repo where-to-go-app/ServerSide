@@ -4,9 +4,15 @@ import requests
 
 
 def test_auth():
+<<<<<<< HEAD
     response = requests.post("http://localhost:8080/api/users/auth", params={
         "auth_secret_string": "12345",
         "client_id": 12344549,
+=======
+    response = requests.post("http://valer14356.pythonanywhere.com/api/users/auth", params={
+        "auth_secret_string":"debug",
+        "client_id": 1234454,
+>>>>>>> dev
         "first_name": "alex",
         "last_name": "dom"
     })
@@ -14,7 +20,7 @@ def test_auth():
 
 
 def test_create_place(user_token, long, lat):
-    response = requests.post("http://localhost:8080/api/places/create", params={
+    response = requests.post("http://valer14356.pythonanywhere.com/api/places/create", params={
         "latitude": lat,
         "longitude": long,
         "place_name": "fffffffff",
@@ -101,22 +107,33 @@ def test_get_place_info_by_id(place_id, user_token):
 
 
 def test_find_places_by_bounding_box(up_left_x, up_left_y, bottom_right_x, bottom_right_y):
-    response = requests.get("http://localhost:8080/api/places/get_places_by_bounding_box", params={
+    response = requests.get("http://valer14356.pythonanywhere.com/api/places/places_around", params={
         "up_left_x": up_left_x,
         "up_left_y": up_left_y,
         "bottom_right_x": bottom_right_x,
         "bottom_right_y": bottom_right_y,
+<<<<<<< HEAD
         "user_token": "314790c3-fcf3-485d-87af-dd821e082c21"
+=======
+        "user_token": "12345"
+>>>>>>> dev
     })
     print(response.text)
 
 
 if __name__ == "__main__":
     USER_TOKEN_1 = "314790c3-fcf3-485d-87af-dd821e082c21"
+<<<<<<< HEAD
     USER_TOKEN_2 = "ed5040d0-fb0a-4b21-84c5-3c04f59fa1cb"
     test_auth()
     # test_create_place("ed5040d0-fb0a-4b21-84c5-3c04f59fa1cb", 54.526252, 41.959880)
     # test_create_place("ed5040d0-fb0a-4b21-84c5-3c04f59fa1cb", 53.778152, 45.775179)
+=======
+    USER_TOKEN_2 = "1c470743-9c3d-4efb-88ff-e3530e1f97d4"
+    test_auth()
+    #test_create_place(USER_TOKEN_2, 54.526252, 41.959880)
+    test_create_place("ed5040d0-fb0a-4b21-84c5-3c04f59fa1cb", 53.778152, 45.775179)
+>>>>>>> dev
     # test_create_place("ed5040d0-fb0a-4b21-84c5-3c04f59fa1cb", 30.778152, 45.775179)
     # test_create_place("ed5040d0-fb0a-4b21-84c5-3c04f59fa1cb", 53.778152, 30.775179)
     # test_update_place()
@@ -125,5 +142,9 @@ if __name__ == "__main__":
     # test_delete_like("ed5040d0-fb0a-4b21-84c5-3c0459fa1cb")
     # test_delete_comment("314790c3-fcf3-485d-87af-dd821e082c21")
     # test_delete_place()
+<<<<<<< HEAD
     #test_get_place_info_by_id(9, "314790c3-fcf3-485d-87af-dd821e082c21")
     #test_find_places_by_bounding_box(35.753610, 57.555763, 49.710271, 50.742034)
+=======
+
+>>>>>>> dev

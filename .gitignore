@@ -2,6 +2,7 @@
 __pycache__
 photos
 test_ph
+settings.py
 save_data
 *.iml
 

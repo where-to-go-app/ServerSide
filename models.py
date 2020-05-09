@@ -43,6 +43,7 @@ class Photo(db.Model):
     place_id = db.Column(db.ForeignKey(Place.id))
     photo_url = db.Column(db.String(256))
     photo_name = db.Column(db.String(256))
+    is_main = db.Column(db.Boolean())
 
 
 class Comment(db.Model):
