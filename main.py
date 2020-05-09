@@ -1,5 +1,6 @@
 import os
 import uuid
+import json
 
 from flask import Flask, request, jsonify
 import settings
@@ -359,7 +360,7 @@ def get_place_info_by_id():
 
 
 @app.route("/api/places/places_around", methods=["GET"])
-def get_places_by_bounding_box():
+def places_around():
     up_left_x = request.args.get('up_left_x')
     up_left_y = request.args.get('up_left_y')
     bottom_right_x = request.args.get('bottom_right_x')
@@ -380,6 +381,52 @@ def get_places_by_bounding_box():
                     "places": places
                     })
 
+@app.route("/api/places/favorite_places", methods=["GET"])
+def favorite_places():
+    token = request.args.get('user_token')
+    # найти пользователя по токену
+    user = User.query.filter_by(user_token=token).first()
+    if user is None:
+        return ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found").to_json()
+    favorite_places = Like.query.filter_by(user_id=user.client_id)
+    result = []
+
+    for p in favorite_places:
+        result.append({
+            "id": p.id,
+            "latitude": p.latitude,
+            "longitude": p.longitude,
+            "creator_id": p.creator_id,
+            "place_name": p.place_name,
+            "place_desc": p.place_desc,
+            "country": p.country,
+            "address": p.address
+        })
+    return json.dumps(result)
+
+@app.route("/api/places/search_places", methods=["GET"])
+def search_places():
+    token = request.args.get('user_token')
+    query = request.args.get('query')
+    # найти пользователя по токену
+    user = User.query.filter_by(user_token=token).first()
+    if user is None:
+        return ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found").to_json()
+    search_places = Place.query.filter(Place.place_name.startswith(query)).all()
+    result = []
+
+    for p in search_places:
+        result.append({
+            "id": p.id,
+            "latitude": p.latitude,
+            "longitude": p.longitude,
+            "creator_id": p.creator_id,
+            "place_name": p.place_name,
+            "place_desc": p.place_desc,
+            "country": p.country,
+            "address": p.address
+        })
+    return json.dumps(result)
 
 # Test
 @app.route("/", methods=["GET"])
