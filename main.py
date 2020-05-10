@@ -417,7 +417,7 @@ def favorite_places():
     user = User.query.filter_by(user_token=token).first()
     if user is None:
         return ErrorResponse(code=CODE_USER_NOT_FOUND, message="user was not found").to_json()
-    favorite_places = Like.query.filter_by(user_id=user.client_id)
+    favorite_places = Like.query.filter_by(user_id=user.client_id).all()
     result = []
 
     for p in favorite_places:
